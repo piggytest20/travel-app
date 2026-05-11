@@ -2,16 +2,12 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>我的旅行隨身 App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>我的旅遊計畫 App</title>
   
-  <!-- Vue 3 -->
-  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  <!-- Tailwind CSS -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Leaflet (Map) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -20,85 +16,78 @@
       theme: {
         extend: {
           colors: {
-            primary: '#E0F2FE', 
-            secondary: '#BAE6FD', 
-            accent: '#0284C7', 
+            primary: '#eff6ff',   // 淺藍背景
+            secondary: '#60a5fa', // 次要輔助色
+            accent: '#2563eb'     // 主要強調色 (藍色)
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.3s ease-out forwards',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(-5px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            }
           }
         }
       }
     }
   </script>
+
   <style>
-    body { background-color: #f0f8ff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    /* 隱藏滾動條但保持可滾動功能 */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    
-    .glass-panel {
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.5);
-    }
+    /* 毛玻璃通用面板 */
+    .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+    /* iOS 安全區域適配 */
+    body { background-color: #f8fafc; padding-bottom: env(safe-area-inset-bottom); }
   </style>
 </head>
-<body class="flex justify-center h-screen overflow-hidden">
-
-  <!-- 主容器 -->
-  <div id="app" class="w-full max-w-md bg-white/50 h-full relative shadow-2xl flex flex-col">
+<body class="h-screen w-full overflow-hidden text-gray-800 flex justify-center">
+  <div id="app" class="w-full max-w-md bg-slate-50 relative flex flex-col h-full shadow-2xl overflow-hidden">
     
-    <!-- 頂部區塊 -->
-    <header class="relative pt-10 pb-5 px-6 rounded-b-3xl shadow-md z-20 overflow-hidden bg-gradient-to-br from-primary via-secondary to-blue-300 border-b border-blue-300">
-      
-      <!-- 裝飾性背景層 -->
-      <div class="absolute inset-0 pointer-events-none">
-        <div class="absolute -top-12 -right-8 w-32 h-32 border-[1.5px] border-white/50 rounded-full opacity-80"></div>
-        <div class="absolute top-4 -right-16 w-48 h-48 border border-white/40 rounded-full opacity-60"></div>
-        <div class="absolute -bottom-8 -left-8 w-24 h-24 border border-white/50 rounded-full opacity-80"></div>
-        
-        <i class="fa-solid fa-paper-plane absolute top-6 right-24 text-4xl text-white opacity-20 -rotate-12"></i>
-        <i class="fa-solid fa-map absolute bottom-4 left-[30%] text-5xl text-blue-500 opacity-10 -rotate-6"></i>
-        <i class="fa-solid fa-camera-retro absolute top-10 left-12 text-3xl text-white opacity-20 rotate-12"></i>
-        <i class="fa-solid fa-route absolute bottom-6 right-[20%] text-3xl text-blue-600 opacity-10"></i>
-        
-        <svg class="absolute bottom-0 w-full opacity-60" viewBox="0 0 1440 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M0 100 Q 360 0, 720 100 T 1440 100" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2" fill="none"/>
-          <path d="M0 150 Q 360 50, 720 150 T 1440 150" stroke="#ffffff" stroke-opacity="0.3" stroke-width="5" fill="none"/>
-        </svg>
-      </div>
-
-      <div class="relative z-10 flex items-center justify-between mb-3 gap-3">
-        <div class="flex-1">
-          <h1 v-if="!editingTripName" @click="editingTripName = true" class="text-xl font-extrabold tracking-wider cursor-pointer flex items-center gap-2 text-accent drop-shadow-sm">
-            {{ tripName }} <i class="fa-solid fa-pen text-xs text-blue-500/70"></i>
-          </h1>
-          <input v-else v-model="tripName" @blur="editingTripName = false" @keyup.enter="editingTripName = false" type="text" class="text-xl font-bold bg-white/90 border border-blue-300 rounded px-2 w-full focus:outline-none text-accent shadow-sm" autofocus>
+    <header class="glass-panel px-4 py-2 border-b border-blue-50 relative z-20 shadow-[0_4px_20px_rgba(37,99,235,0.05)] flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-accent text-white rounded-xl flex items-center justify-center shadow-md">
+          <i class="fa-solid fa-plane text-lg"></i>
         </div>
-        <img src="https://i.meee.com.tw/uKBGMcM.png" alt="Logo" class="w-28 h-28 object-contain shrink-0 drop-shadow-sm">
-      </div>
-
-      <div v-show="['itinerary', 'map', 'expense'].includes(currentTab)" class="relative z-10 flex items-center gap-2 mt-2 animate-fade-in">
-        <div class="relative flex-1">
-          <select v-model="selectedDay" class="w-full appearance-none bg-white/95 border border-blue-200 text-accent py-2 pl-4 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 font-bold shadow-sm text-sm">
-            <option value="all">🗓️ 全部行程總覽</option>
-            <option v-for="d in totalDays" :key="d" :value="d">📍 Day {{ d }}</option>
-          </select>
-          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-accent">
-            <i class="fa-solid fa-chevron-down text-sm"></i>
-          </div>
+        <div class="flex flex-col">
+          <input v-if="editingTripName" v-model="tripName" @blur="editingTripName = false" @keyup.enter="editingTripName = false" type="text" class="text-xl font-black text-gray-800 bg-white/50 border-b-2 border-accent focus:outline-none w-32 px-1">
+          <h1 v-else @click="editingTripName = true" class="text-xl font-black text-gray-800 cursor-pointer">{{ tripName }} <i class="fa-solid fa-pen text-[10px] text-gray-300 ml-1"></i></h1>
         </div>
-        <button @click="addDay" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold shadow-md whitespace-nowrap text-sm hover:bg-blue-700 transition-colors">
-          ＋ 新增
-        </button>
-        <button v-show="selectedDay !== 'all'" @click="deleteDay" class="bg-red-400/90 text-white px-3 py-2 rounded-xl font-bold shadow-md text-sm hover:bg-red-500 transition-colors backdrop-blur-sm">
-          <i class="fa-solid fa-trash-can"></i>
-        </button>
       </div>
+<div class="flex items-center gap-2">
+
+  <!-- 商業 Logo -->
+  <img 
+    src="https://i.meee.com.tw/jELDTMR.png"
+    alt="Logo"
+    class="h-8 w-auto object-contain flex-shrink-0"
+  />
+
+  <!-- Day 篩選 -->
+  <div class="flex gap-1 bg-white/70 p-1 rounded-xl shadow-inner border border-blue-50">
+
+    <select v-model="selectedDay" class="bg-transparent font-bold text-accent text-sm focus:outline-none px-1">
+      <option value="all">全部</option>
+      <option v-for="d in totalDays" :key="d" :value="d">Day {{ d }}</option>
+    </select>
+
+    <button @click="addDay" class="text-accent bg-blue-50 px-2 rounded-lg hover:bg-blue-100">
+      <i class="fa-solid fa-plus text-xs"></i>
+    </button>
+
+    <button @click="deleteDay" class="text-red-400 bg-red-50 px-2 rounded-lg hover:bg-red-100">
+      <i class="fa-solid fa-minus text-xs"></i>
+    </button>
+
+  </div>
+</div>
     </header>
 
-    <!-- 主內容區 -->
-    <main class="flex-1 overflow-y-auto no-scrollbar p-5 pb-24 relative z-10">
+    <main class="flex-1 overflow-y-auto no-scrollbar p-4 pb-24 relative z-10">
       
-      <!-- 1. 行程表 -->
       <div v-show="currentTab === 'itinerary'" class="space-y-4">
         <div class="glass-panel p-4 rounded-2xl shadow-sm flex flex-col gap-3">
           <div class="flex justify-between items-center border-b border-gray-100 pb-2">
@@ -106,19 +95,52 @@
             <button v-if="editingItinId" @click="cancelEditItin" class="text-xs text-gray-400 hover:text-gray-600 bg-gray-100 px-2 py-1 rounded">取消編輯</button>
           </div>
           
-          <div class="flex gap-2">
-            <select v-if="selectedDay === 'all' && !editingItinId" v-model="itinForm.day" class="p-2 border border-blue-100 rounded-xl text-gray-700 bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary text-sm w-1/3">
-              <option value="">選擇天數</option>
-              <option v-for="d in totalDays" :key="d" :value="d">Day {{ d }}</option>
-            </select>
-            <input v-model="itinForm.time" type="time" class="p-2 border border-blue-100 rounded-xl text-gray-700 bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary text-sm" :class="selectedDay === 'all' && !editingItinId ? 'w-1/3' : 'w-1/3'">
-            <input v-model="itinForm.title" type="text" placeholder="行程名稱" class="p-2 border border-blue-100 rounded-xl text-gray-700 bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary flex-1">
-          </div>
+       <div class="flex flex-col gap-2">
+
+  <!-- 第一列 -->
+  <div class="flex gap-2">
+
+    <select 
+      v-if="selectedDay === 'all' && !editingItinId"
+      v-model="itinForm.day"
+      class="p-2 border border-blue-100 rounded-xl text-gray-700 bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary text-sm w-1/3"
+    >
+      <option value="">選擇天數</option>
+      <option v-for="d in totalDays" :key="d" :value="d">
+        Day {{ d }}
+      </option>
+    </select>
+
+    <input 
+      v-model="itinForm.time"
+      type="time"
+      class="p-2 border border-blue-100 rounded-xl text-gray-700 bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary text-sm flex-1"
+    >
+
+    <input 
+      v-model="itinForm.title"
+      type="text"
+      placeholder="行程名稱"
+      class="p-2 border border-blue-100 rounded-xl text-gray-700 bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary flex-[2]"
+    >
+
+  </div>
+
+  <!-- 第二列 -->
+  <input 
+    v-model="itinForm.mapKeyword"
+    type="text"
+    placeholder="地圖定位名稱（選填）例如：東京鐵塔、澀谷109"
+    class="w-full p-2 border border-blue-100 rounded-xl text-sm text-gray-700 bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary"
+  >
+
+</div>
           
           <select v-model="itinForm.transport" class="p-2 border border-blue-100 rounded-xl text-gray-700 bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary w-full">
             <option value="">選擇交通方式 (選填)</option>
             <option value="飛機">✈️ 飛機</option>
             <option value="地鐵">🚇 地鐵</option>
+            <option value="客運">🚌 客運</option>
             <option value="計程車">🚕 計程車</option>
             <option value="步行">🚶 步行</option>
           </select>
@@ -143,6 +165,58 @@
             <input v-model="itinForm.endStation" type="text" placeholder="終點站" class="w-1/2 p-2 border border-blue-100 rounded-xl text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary">
           </div>
 
+<div v-if="itinForm.transport === '客運'" class="flex flex-col gap-3 animate-fade-in bg-white/70 p-3 rounded-xl border border-blue-100">
+
+  <!-- 起點站 / 終點站 -->
+  <div class="flex gap-2">
+
+    <input
+      v-model="itinForm.startStation"
+      type="text"
+      placeholder="起點站"
+      class="w-1/2 p-2 border border-blue-100 rounded-xl text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary"
+    >
+
+    <div class="flex items-center text-gray-400">
+      <i class="fa-solid fa-arrow-right"></i>
+    </div>
+
+    <input
+      v-model="itinForm.endStation"
+      type="text"
+      placeholder="終點站"
+      class="w-1/2 p-2 border border-blue-100 rounded-xl text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary"
+    >
+
+  </div>
+
+  <!-- 出發 / 抵達時間 -->
+  <div class="flex gap-2">
+
+    <div class="flex flex-col w-1/2">
+      <label class="text-[10px] text-gray-500 mb-1 ml-1">出發時間</label>
+
+      <input
+        v-model="itinForm.busDepartureTime"
+        type="time"
+        class="p-2 border border-blue-100 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-secondary"
+      >
+    </div>
+
+    <div class="flex flex-col w-1/2">
+      <label class="text-[10px] text-gray-500 mb-1 ml-1">抵達時間</label>
+
+      <input
+        v-model="itinForm.busArrivalTime"
+        type="time"
+        class="p-2 border border-blue-100 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-secondary"
+      >
+    </div>
+
+  </div>
+
+</div>
+
           <button @click="saveItinerary" class="bg-accent text-white py-2 rounded-xl font-bold shadow-md hover:bg-blue-700 transition-colors">
             {{ editingItinId ? '儲存修改' : '加入行程' }}
           </button>
@@ -152,70 +226,109 @@
           目前還沒有安排行程喔！
         </div>
         
-        <div v-for="item in filteredItineraries" :key="item.id" class="glass-panel p-4 rounded-2xl shadow-sm flex flex-col justify-center border-l-4 border-l-accent relative group hover:shadow-md transition-shadow">
-          <div class="absolute top-2 right-2 flex gap-2">
-            <button @click="editItin(item)" class="text-accent hover:text-blue-700 p-1"><i class="fa-solid fa-pen text-sm"></i></button>
-            <button @click="deleteItin(item.id)" class="text-red-400 hover:text-red-600 p-1"><i class="fa-solid fa-trash-can text-sm"></i></button>
-          </div>
-          
-          <div class="flex flex-col pr-10">
-            <div class="flex items-center gap-2 mb-1">
-              <span v-if="selectedDay === 'all'" class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full border border-gray-200">Day {{ item.day }}</span>
-              <span class="text-sm text-accent font-black">{{ item.time }}</span>
+        <div v-for="(item, index) in filteredItineraries" :key="item.id">
+          <div class="glass-panel p-4 rounded-2xl shadow-sm flex flex-col justify-center border-l-4 border-l-accent relative group hover:shadow-md transition-shadow">
+            <div class="absolute top-2 right-2 flex gap-2">
+              <button @click="editItin(item)" class="text-accent hover:text-blue-700 p-2"><i class="fa-solid fa-pen text-sm"></i></button>
+              <button @click="deleteItin(item.id)" class="text-red-400 hover:text-red-600 p-2"><i class="fa-solid fa-trash-can text-sm"></i></button>
             </div>
-            <div class="text-gray-800 font-bold text-lg">{{ item.title }}</div>
-          </div>
-          
-          <div v-if="item.transport" class="mt-2 flex flex-col gap-2">
-            <div class="flex items-center justify-between">
-              <div class="bg-primary text-accent text-xs font-bold px-3 py-1 rounded-full inline-block">
-                {{ item.transport }}
+            
+            <div class="flex flex-col pr-12">
+              <div class="flex items-center gap-2 mb-1">
+                <span v-if="selectedDay === 'all'" class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full border border-gray-200">Day {{ item.day }}</span>
+                <span class="text-sm text-accent font-black">{{ item.time }}</span>
               </div>
-              <div v-if="item.transport === '地鐵' && (item.startStation || item.endStation)" class="text-xs text-gray-600 bg-white/80 px-2 py-1 rounded-md border border-gray-100 font-medium">
-                {{ item.startStation }} <i class="fa-solid fa-arrow-right mx-1 text-gray-400"></i> {{ item.endStation }}
-              </div>
+              <div class="text-gray-800 font-bold text-lg leading-tight">{{ item.title }}</div>
             </div>
+            
+            <div v-if="item.transport" class="mt-2 flex flex-col gap-2">
+              <div class="flex items-center gap-2">
+                <div class="bg-primary text-accent text-xs font-bold px-3 py-1 rounded-full inline-block">
+                  {{ item.transport }}
+                </div>
+                <div v-if="item.transport === '地鐵' && (item.startStation || item.endStation)" class="text-xs text-gray-600 bg-white/80 px-2 py-1 rounded-md border border-gray-100 font-medium">
+                  {{ item.startStation }} <i class="fa-solid fa-arrow-right mx-1 text-gray-400"></i> {{ item.endStation }}
+                </div>
+                <div 
+  v-if="item.transport === '客運'" 
+  class="text-xs text-gray-600 bg-white/80 px-2 py-2 rounded-md border border-gray-100 font-medium space-y-1"
+>
 
-            <div v-if="item.transport === '飛機' && (item.flightDepartureAirport || item.flightArrivalAirport || item.flightMemo)" class="text-xs text-gray-600 bg-white/90 px-3 py-2 rounded-xl border border-blue-100 font-medium shadow-sm space-y-1">
-              <div class="flex justify-between items-center border-b border-gray-100 pb-1.5 mb-1.5">
-                <div class="flex flex-col">
-                  <span class="text-[10px] text-gray-400">起飛</span>
-                  <span class="font-bold text-gray-800"><i class="fa-solid fa-plane-departure mr-1 text-accent"></i> {{ item.flightDepartureAirport || '未知' }}</span>
-                  <span class="text-accent">{{ item.flightDepartureTime || '--:--' }}</span>
+  <!-- 起點站 / 終點站 -->
+  <div 
+    v-if="item.startStation || item.endStation"
+    class="flex items-center gap-1"
+  >
+    <span>{{ item.startStation || '未知起點' }}</span>
+
+    <i class="fa-solid fa-arrow-right text-gray-400 mx-1"></i>
+
+    <span>{{ item.endStation || '未知終點' }}</span>
+  </div>
+
+  <!-- 出發 / 抵達時間 -->
+  <div 
+    v-if="item.busDepartureTime || item.busArrivalTime"
+  >
+    出發 {{ item.busDepartureTime || '--:--' }}
+
+    <i class="fa-solid fa-arrow-right mx-1 text-gray-400"></i>
+
+    抵達 {{ item.busArrivalTime || '--:--' }}
+  </div>
+
+</div>
+              </div>
+
+              <div v-if="item.transport === '飛機' && (item.flightDepartureAirport || item.flightArrivalAirport || item.flightMemo)" class="text-xs text-gray-600 bg-white/90 px-3 py-2 rounded-xl border border-blue-100 font-medium shadow-sm space-y-1">
+                <div class="flex justify-between items-center border-b border-gray-100 pb-1.5 mb-1.5">
+                  <div class="flex flex-col">
+                    <span class="text-[10px] text-gray-400">起飛</span>
+                    <span class="font-bold text-gray-800"><i class="fa-solid fa-plane-departure mr-1 text-accent"></i> {{ item.flightDepartureAirport || '未知' }}</span>
+                    <span class="text-accent">{{ item.flightDepartureTime || '--:--' }}</span>
+                  </div>
+                  <div class="flex flex-col items-center px-2 text-gray-300">
+                    <i class="fa-solid fa-plane text-lg text-blue-200"></i>
+                    <div class="w-8 border-b-2 border-dotted border-gray-300 mt-1"></div>
+                  </div>
+                  <div class="flex flex-col text-right">
+                    <span class="text-[10px] text-gray-400">降落</span>
+                    <span class="font-bold text-gray-800">{{ item.flightArrivalAirport || '未知' }} <i class="fa-solid fa-plane-arrival ml-1 text-accent"></i></span>
+                    <span class="text-accent">{{ item.flightArrivalTime || '--:--' }}</span>
+                  </div>
                 </div>
-                <div class="flex flex-col items-center px-2 text-gray-300">
-                  <i class="fa-solid fa-plane text-lg text-blue-200"></i>
-                  <div class="w-8 border-b-2 border-dotted border-gray-300 mt-1"></div>
-                </div>
-                <div class="flex flex-col text-right">
-                  <span class="text-[10px] text-gray-400">降落</span>
-                  <span class="font-bold text-gray-800">{{ item.flightArrivalAirport || '未知' }} <i class="fa-solid fa-plane-arrival ml-1 text-accent"></i></span>
-                  <span class="text-accent">{{ item.flightArrivalTime || '--:--' }}</span>
+                <div v-if="item.flightMemo" class="text-gray-500 pt-1">
+                  <i class="fa-solid fa-circle-info mr-1 text-secondary"></i> {{ item.flightMemo }}
                 </div>
               </div>
-              <div v-if="item.flightMemo" class="text-gray-500 pt-1">
-                <i class="fa-solid fa-circle-info mr-1 text-secondary"></i> {{ item.flightMemo }}
-              </div>
+            </div>
+          </div>
+
+          <div v-if="index < filteredItineraries.length - 1 && selectedDay !== 'all'" class="flex justify-center my-1 relative z-0">
+            <div class="absolute h-full w-[2px] bg-blue-100 -z-10"></div>
+            <div class="bg-blue-50 text-accent text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-blue-100 shadow-sm flex items-center gap-1 my-1">
+              <i class="fa-solid fa-hourglass-half"></i> 停留: {{ calculateTimeGap(item.time, filteredItineraries[index+1].time) }}
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 2. 地圖 -->
-      <div v-show="currentTab === 'map'" class="h-full flex flex-col">
-        <div class="glass-panel p-3 rounded-2xl shadow-sm mb-4 text-sm text-gray-600 flex justify-between items-center">
-          <span class="font-bold text-accent">📍 {{ selectedDay === 'all' ? '全部行程軌跡' : `Day ${selectedDay} 移動路徑` }}</span>
+      <div v-show="currentTab === 'map'" class="h-full flex flex-col pb-4">
+        <div class="glass-panel p-3 rounded-2xl shadow-sm mb-3 flex justify-between items-center relative z-20">
+          <span class="font-bold text-accent text-sm">📍 {{ selectedDay === 'all' ? '全部軌跡 (依顏色分天)' : `Day ${selectedDay} 移動路線` }}</span>
+          <button v-if="selectedDay !== 'all'" @click="syncItineraryLocations" class="bg-accent text-white px-3 py-1.5 rounded-xl text-[11px] font-bold shadow-md hover:bg-blue-700 transition-colors flex items-center gap-1 disabled:opacity-50" :disabled="isSyncingMap">
+            <i class="fa-solid fa-location-crosshairs" :class="{'animate-spin': isSyncingMap}"></i> {{ isSyncingMap ? '定位中...' : '同步定位行程' }}
+          </button>
         </div>
-        <div id="map" class="flex-1 rounded-2xl shadow-inner border border-white/50 z-0 relative min-h-[300px]">
+        <div id="map" class="flex-1 rounded-2xl shadow-inner border border-white/50 z-0 relative min-h-[400px]">
           <div v-if="!hasPathForSelectedDay" class="absolute inset-0 flex items-center justify-center z-[1000] pointer-events-none">
             <div class="bg-white/90 px-4 py-2 rounded-xl text-gray-500 text-sm font-bold shadow-sm backdrop-blur-sm border border-gray-100">
-              尚無路線資料
+              尚無路線資料或尚未點擊同步定位
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 3. 記帳功能 -->
       <div v-show="currentTab === 'expense'" class="space-y-4">
         <div class="glass-panel p-5 rounded-2xl shadow-sm flex justify-between items-center bg-gradient-to-br from-white to-primary/30 border border-blue-50">
           <div class="flex flex-col">
@@ -244,12 +357,10 @@
               {{ method.name }} ({{ method.type === 'cash' ? '現金' : '信用卡' }})
             </option>
           </select>
-          
           <div v-if="selectedMethodInfo && selectedMethodInfo.type === 'card'" class="bg-blue-50/80 border border-blue-100 p-3 rounded-xl text-sm text-accent space-y-1">
             <div class="flex justify-between"><span>預估單筆回饋 ({{ selectedMethodInfo.rewardRate }}%)：</span> <strong class="text-green-600">+{{ calculatedReward }} 元</strong></div>
             <div class="flex justify-between"><span>該卡剩餘額度：</span> <strong>{{ remainingLimit.toLocaleString() }} 元</strong></div>
           </div>
-
           <button @click="addExpense" class="w-full bg-accent text-white py-2 rounded-xl font-bold shadow-md hover:bg-blue-700">記一筆</button>
         </div>
 
@@ -314,8 +425,7 @@
         </div>
       </div>
 
-      <!-- 4. 旅遊前檢查 -->
-      <div v-show="currentTab === 'checklist'" class="space-y-4 mt-2">
+      <div v-show="currentTab === 'checklist'" class="space-y-4">
         <div class="flex gap-2">
           <input v-model="newChecklistItem" @keyup.enter="addChecklistItem" type="text" placeholder="新增行前準備事項..." class="flex-1 p-3 border border-blue-100 rounded-xl glass-panel shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary">
           <button @click="addChecklistItem" class="bg-accent text-white px-5 rounded-xl font-bold shadow-md"><i class="fa-solid fa-plus"></i></button>
@@ -331,8 +441,7 @@
         </div>
       </div>
 
-      <!-- 5. 購物清單 -->
-      <div v-show="currentTab === 'shopping'" class="space-y-4 mt-2">
+      <div v-show="currentTab === 'shopping'" class="space-y-4">
         <div class="flex gap-2">
           <input v-model="newShoppingItem" @keyup.enter="addShoppingItem" type="text" placeholder="新增待買物品..." class="flex-1 p-3 border border-blue-100 rounded-xl glass-panel shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary">
           <button @click="addShoppingItem" class="bg-accent text-white px-5 rounded-xl font-bold shadow-md"><i class="fa-solid fa-plus"></i></button>
@@ -348,10 +457,7 @@
         </div>
       </div>
 
-      <!-- 6. 歷史紀錄 & 備份功能 -->
-      <div v-show="currentTab === 'history'" class="space-y-4 mt-2">
-        
-        <!-- 管理區塊 -->
+      <div v-show="currentTab === 'history'" class="space-y-4">
         <div class="glass-panel p-4 rounded-2xl shadow-sm space-y-4">
           <div>
             <h3 class="text-sm font-bold text-gray-700 border-b border-gray-100 pb-2 mb-3">管理目前行程</h3>
@@ -365,15 +471,12 @@
             </div>
           </div>
           
-          <!-- 匯出與匯入功能 -->
           <div class="pt-2 border-t border-gray-100">
             <h3 class="text-xs font-bold text-accent mb-2">安全備份 (防止資料因清除快取遺失)</h3>
             <div class="flex gap-2">
               <button @click="exportData" class="flex-1 bg-white border border-blue-200 text-accent py-2 rounded-xl font-bold shadow-sm hover:bg-blue-50 transition-colors flex justify-center items-center gap-2 text-sm">
                 <i class="fa-solid fa-download"></i> 匯出備份檔
               </button>
-              
-              <!-- 隱藏的檔案上傳輸入框 -->
               <input type="file" @change="importData" accept=".json" class="hidden" ref="fileInput">
               <button @click="$refs.fileInput.click()" class="flex-1 bg-white border border-blue-200 text-accent py-2 rounded-xl font-bold shadow-sm hover:bg-blue-50 transition-colors flex justify-center items-center gap-2 text-sm">
                 <i class="fa-solid fa-upload"></i> 讀取備份檔
@@ -384,9 +487,8 @@
         </div>
 
         <h3 class="text-sm font-bold text-accent pl-2 mt-6 relative z-10 bg-white/70 inline-block px-3 py-1 rounded-xl">📚 我的歷史旅遊清單</h3>
-        <div v-if="historyTrips.length === 0" class="text-center text-gray-400 py-8 text-sm glass-panel rounded-xl border border-dashed border-gray-200">
-          目前還沒有儲存的歷史紀錄喔！
-        </div>
+        <div v-if="historyTrips.length === 0" class="text-center text-gray-400 py-8 text-sm glass-panel rounded-xl border border-dashed border-gray-200">目前還沒有儲存的歷史紀錄喔！</div>
+        
         <div class="space-y-3 relative z-10">
           <div v-for="trip in historyTrips" :key="trip.id" class="glass-panel p-4 rounded-2xl shadow-sm border-l-4 border-l-accent relative group hover:shadow-md transition-shadow">
             <div class="flex justify-between items-start mb-2">
@@ -399,9 +501,7 @@
             <hr class="border-gray-100 my-2">
             <div class="flex justify-between items-center">
               <span class="text-sm font-bold text-gray-600">總花費: ${{ trip.expenses.reduce((s, e) => s + e.amount, 0).toLocaleString() }}</span>
-              <button @click="loadHistoryTrip(trip)" class="bg-primary text-accent px-4 py-1.5 rounded-xl font-bold text-xs hover:bg-secondary transition-colors shadow-sm">
-                載入檢視
-              </button>
+              <button @click="loadHistoryTrip(trip)" class="bg-primary text-accent px-4 py-1.5 rounded-xl font-bold text-xs hover:bg-secondary transition-colors shadow-sm">載入檢視</button>
             </div>
           </div>
         </div>
@@ -409,34 +509,12 @@
 
     </main>
 
-    <!-- Bottom Navigation -->
     <nav class="absolute bottom-0 w-full glass-panel border-t border-white/50 pb-5 pt-2 px-1 flex justify-between text-gray-400 rounded-t-3xl shadow-[0_-10px_30px_rgba(2,132,199,0.05)] z-20">
-      <button @click="switchTab('itinerary')" :class="{'text-accent scale-110': currentTab === 'itinerary'}" class="flex flex-col items-center gap-1 transition-all duration-300 flex-1">
-        <i class="fa-solid fa-calendar-day text-[18px]"></i>
-        <span class="text-[10px] font-bold">行程</span>
-      </button>
-      <button @click="switchTab('map')" :class="{'text-accent scale-110': currentTab === 'map'}" class="flex flex-col items-center gap-1 transition-all duration-300 flex-1">
-        <i class="fa-solid fa-map-location-dot text-[18px]"></i>
-        <span class="text-[10px] font-bold">地圖</span>
-      </button>
-      <button @click="switchTab('expense')" :class="{'text-accent scale-110': currentTab === 'expense'}" class="flex flex-col items-center gap-1 transition-all duration-300 flex-1">
-        <i class="fa-solid fa-wallet text-[18px]"></i>
-        <span class="text-[10px] font-bold">記帳</span>
-      </button>
-      <button @click="switchTab('shopping')" :class="{'text-accent scale-110': currentTab === 'shopping'}" class="flex flex-col items-center gap-1 transition-all duration-300 flex-1">
-        <i class="fa-solid fa-cart-shopping text-[18px]"></i>
-        <span class="text-[10px] font-bold">購物</span>
-      </button>
-      <button @click="switchTab('checklist')" :class="{'text-accent scale-110': currentTab === 'checklist'}" class="flex flex-col items-center gap-1 transition-all duration-300 flex-1">
-        <i class="fa-solid fa-clipboard-list text-[18px]"></i>
-        <span class="text-[10px] font-bold">準備</span>
-      </button>
-      <button @click="switchTab('history')" :class="{'text-accent scale-110': currentTab === 'history'}" class="flex flex-col items-center gap-1 transition-all duration-300 flex-1">
-        <i class="fa-solid fa-clock-rotate-left text-[18px]"></i>
-        <span class="text-[10px] font-bold">歷史</span>
+      <button v-for="tab in [{id:'itinerary', icon:'calendar-day', name:'行程'}, {id:'map', icon:'map-location-dot', name:'地圖'}, {id:'expense', icon:'wallet', name:'記帳'}, {id:'shopping', icon:'cart-shopping', name:'購物'}, {id:'checklist', icon:'clipboard-list', name:'準備'}, {id:'history', icon:'clock-rotate-left', name:'歷史'}]" :key="tab.id" @click="switchTab(tab.id)" :class="{'text-accent scale-110': currentTab === tab.id}" class="flex flex-col items-center gap-1 transition-all duration-300 flex-1">
+        <i :class="`fa-solid fa-${tab.icon} text-[18px]`"></i>
+        <span class="text-[10px] font-bold">{{ tab.name }}</span>
       </button>
     </nav>
-
   </div>
 
   <script>
@@ -444,244 +522,271 @@
 
     createApp({
       setup() {
-        // --- 本地儲存讀取工具 ---
-        const loadData = (key, defaultVal) => {
+        const useSyncedRef = (key, defaultVal, deep = false) => {
           const saved = localStorage.getItem(key);
-          return saved ? JSON.parse(saved) : defaultVal;
+          const r = ref(saved ? JSON.parse(saved) : defaultVal);
+          watch(r, val => localStorage.setItem(key, JSON.stringify(val)), { deep });
+          return r;
         };
+        const clone = (obj) => JSON.parse(JSON.stringify(obj));
+        const confirmAction = (msg, cb) => { if(window.confirm(msg)) cb(); };
 
-        // --- 核心狀態 (加入 localStorage) ---
-        const currentTab = ref(loadData('travel_currentTab', 'itinerary'));
-        const totalDays = ref(loadData('travel_totalDays', 1));
-        const selectedDay = ref(loadData('travel_selectedDay', 'all')); 
-        const tripName = ref(loadData('travel_tripName', '我的新旅程'));
+        const currentTab = useSyncedRef('travel_currentTab', 'itinerary');
+        const totalDays = useSyncedRef('travel_totalDays', 1);
+        const selectedDay = useSyncedRef('travel_selectedDay', 'all'); 
+        const tripName = useSyncedRef('travel_tripName', '我的新旅程');
         const editingTripName = ref(false);
 
-        // 監聽變更並儲存
-        watch(currentTab, val => localStorage.setItem('travel_currentTab', JSON.stringify(val)));
-        watch(totalDays, val => localStorage.setItem('travel_totalDays', JSON.stringify(val)));
-        watch(selectedDay, val => localStorage.setItem('travel_selectedDay', JSON.stringify(val)));
-        watch(tripName, val => localStorage.setItem('travel_tripName', JSON.stringify(val)));
-
-        const addDay = () => {
-          totalDays.value++;
-          selectedDay.value = totalDays.value;
-        };
-
+        const addDay = () => { totalDays.value++; selectedDay.value = totalDays.value; };
         const deleteDay = () => {
           if (selectedDay.value === 'all') return;
-          if (totalDays.value <= 1) { alert('至少需保留一天行程！'); return; }
-          const hasItin = itineraries.value.some(i => i.day === selectedDay.value);
-          if (hasItin) { alert('該天已有安排行程無法刪除，需要清空當天所有行程才可以刪除！'); return; }
-          if (confirm(`確定要刪除 Day ${selectedDay.value} 嗎？`)) {
-            const deletedDay = selectedDay.value;
-            itineraries.value.forEach(i => { if (i.day > deletedDay) i.day--; });
-            expenses.value.forEach(e => { if (e.day > deletedDay) e.day--; });
-            totalDays.value--;
-            selectedDay.value = 'all'; 
-          }
+          if (totalDays.value <= 1) return alert('至少需保留一天行程！');
+          if (itineraries.value.some(i => i.day === selectedDay.value)) return alert('該天已有行程，需清空才可以刪除！');
+          confirmAction(`確定刪除 Day ${selectedDay.value} 嗎？`, () => {
+            const d = selectedDay.value;
+            itineraries.value.forEach(i => { if (i.day > d) i.day--; });
+            expenses.value.forEach(e => { if (e.day > d) e.day--; });
+            totalDays.value--; selectedDay.value = 'all'; 
+          });
         };
 
         // --- 1. 行程表功能 ---
-        const itineraries = ref(loadData('travel_itineraries', []));
-        watch(itineraries, val => localStorage.setItem('travel_itineraries', JSON.stringify(val)), { deep: true });
-
-        const itinForm = ref({ day: '', time: '', title: '', transport: '', startStation: '', endStation: '', flightDepartureAirport: '', flightArrivalAirport: '', flightDepartureTime: '', flightArrivalTime: '', flightMemo: '' });
+const initItinForm = () => ({ 
+  day: '', 
+  time: '', 
+  title: '', 
+  mapKeyword: '', 
+  transport: '',  
+          startStation: '', endStation: '', 
+          busDepartureTime: '', busArrivalTime: '', 
+          flightDepartureAirport: '', flightArrivalAirport: '', flightDepartureTime: '', flightArrivalTime: '', flightMemo: '',
+          lat: null, lng: null // 地圖座標資料
+        });
+        const itineraries = useSyncedRef('travel_itineraries', [], true);
+        const itinForm = ref(initItinForm());
         const editingItinId = ref(null);
 
         const filteredItineraries = computed(() => {
-          let list = itineraries.value;
-          if (selectedDay.value !== 'all') list = list.filter(i => i.day === selectedDay.value);
-          return list.slice().sort((a, b) => {
-            if(a.day !== b.day) return a.day - b.day;
-            return a.time.localeCompare(b.time);
-          });
+          const list = selectedDay.value === 'all' ? itineraries.value : itineraries.value.filter(i => i.day === selectedDay.value);
+          return list.slice().sort((a, b) => a.day !== b.day ? a.day - b.day : a.time.localeCompare(b.time));
         });
 
         const saveItinerary = () => {
-          let targetDay = selectedDay.value === 'all' ? itinForm.value.day : selectedDay.value;
-          if (selectedDay.value === 'all' && !editingItinId.value && !targetDay) { alert('請選擇行程天數'); return; }
+          const targetDay = selectedDay.value === 'all' ? itinForm.value.day : selectedDay.value;
+          if (selectedDay.value === 'all' && !editingItinId.value && !targetDay) return alert('請選擇行程天數');
           if (!itinForm.value.time || !itinForm.value.title) return;
 
           if (editingItinId.value) {
             const idx = itineraries.value.findIndex(i => i.id === editingItinId.value);
-            if (idx !== -1) itineraries.value[idx] = { ...itinForm.value, id: editingItinId.value, day: itineraries.value[idx].day };
+            // 判斷如果名稱有改，清空經緯度讓使用者重新定位
+            if (idx > -1) {
+              const resetGeo = itineraries.value[idx].title !== itinForm.value.title;
+              itineraries.value[idx] = { 
+                ...itinForm.value, id: editingItinId.value, day: itineraries.value[idx].day,
+                lat: resetGeo ? null : itineraries.value[idx].lat,
+                lng: resetGeo ? null : itineraries.value[idx].lng
+              };
+            }
             editingItinId.value = null;
           } else {
             itineraries.value.push({ ...itinForm.value, id: Date.now(), day: targetDay });
           }
-          itinForm.value = { day: '', time: '', title: '', transport: '', startStation: '', endStation: '', flightDepartureAirport: '', flightArrivalAirport: '', flightDepartureTime: '', flightArrivalTime: '', flightMemo: '' };
+          itinForm.value = initItinForm();
         };
 
-        const editItin = (item) => { 
-          editingItinId.value = item.id; 
-          itinForm.value = { ...item }; 
-          window.scrollTo({ top: 0, behavior: 'smooth' }); 
-        };
-        const cancelEditItin = () => { 
-          editingItinId.value = null; 
-          itinForm.value = { day: '', time: '', title: '', transport: '', startStation: '', endStation: '', flightDepartureAirport: '', flightArrivalAirport: '', flightDepartureTime: '', flightArrivalTime: '', flightMemo: '' }; 
-        };
-        const deleteItin = (id) => { if (confirm('確定刪除此行程？')) itineraries.value = itineraries.value.filter(i => i.id !== id); };
+        const editItin = (item) => { editingItinId.value = item.id; itinForm.value = { ...item }; window.scrollTo({ top: 0, behavior: 'smooth' }); };
+        const cancelEditItin = () => { editingItinId.value = null; itinForm.value = initItinForm(); };
+        const deleteItin = (id) => { confirmAction('確定刪除此行程？', () => itineraries.value = itineraries.value.filter(i => i.id !== id)); };
 
-        // --- 2. 地圖功能 ---
-        let mapInstance = null;
-        let polylineLayer = null;
-        let markerLayer = null;
-        const dayColors = ['#0284C7', '#F97316', '#10B981', '#8B5CF6', '#F43F5E', '#14B8A6', '#EAB308'];
-        const mockPathsData = { 1: [[35.5494, 139.7798], [35.6895, 139.6917]] };
+        // --- 計算時間差距 (停留時間) ---
+        const calculateTimeGap = (time1, time2) => {
+          if (!time1 || !time2) return '';
+          const [h1, m1] = time1.split(':').map(Number);
+          const [h2, m2] = time2.split(':').map(Number);
+          let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+          if (diff < 0) diff += 24 * 60; // 跨夜處理
+          const h = Math.floor(diff / 60);
+          const m = diff % 60;
+          if (h > 0 && m > 0) return `${h}小時${m}分`;
+          if (h > 0) return `${h}小時`;
+          return `${m}分鐘`;
+        };
+
+        // --- 2. 地圖與 ArcGIS 智能定位 ---
+        let mapInstance = null, polylineLayer = null, markerLayer = null;
+        const dayColors = ['#2563eb', '#f97316', '#10b981', '#8b5cf6', '#f43f5e', '#14b8a6', '#eab308'];
+        const isSyncingMap = ref(false);
 
         const hasPathForSelectedDay = computed(() => {
-          if (selectedDay.value === 'all') return Object.keys(mockPathsData).length > 0;
-          return !!mockPathsData[selectedDay.value];
+          const list = selectedDay.value === 'all' ? itineraries.value : itineraries.value.filter(i => i.day === selectedDay.value);
+          return list.some(i => i.lat && i.lng);
         });
 
         const initMap = () => {
-          if (mapInstance) { mapInstance.invalidateSize(); drawPaths(); return; }
-          mapInstance = L.map('map', { zoomControl: false }).setView([35.6895, 139.6917], 10);
-          L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO' }).addTo(mapInstance);
+          if (mapInstance) { mapInstance.invalidateSize(); return drawPaths(); }
+          mapInstance = L.map('map', { zoomControl: false }).setView([23.6978, 120.9605], 7); // 預設視角台灣
+          
+          // 使用 Google Map
+		 L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+         maxZoom: 20,
+         subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+         attribution: '&copy; Google Maps'
+         }).addTo(mapInstance);
+          
           polylineLayer = L.layerGroup().addTo(mapInstance);
           markerLayer = L.layerGroup().addTo(mapInstance);
+          drawPaths();
+        };
+
+        // 同步定位功能 (ArcGIS Geocoding)
+        const syncItineraryLocations = async () => {
+          if (selectedDay.value === 'all') return alert('請先選擇特定天數，再點擊同步進行定位。');
+          const dayItems = itineraries.value.filter(i => i.day === selectedDay.value);
+          if (dayItems.length === 0) return alert('這天沒有安排任何行程可定位。');
+
+          isSyncingMap.value = true;
+          let updatedCount = 0;
+
+          // 平行發送請求提升效能
+          await Promise.all(dayItems.map(async (item) => {
+            // 不論有無座標，一律重新根據 title 同步更新
+            try {
+ const keyword = item.mapKeyword || item.title;
+
+const url = `https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?singleLine=${encodeURIComponent(keyword)}&f=json&maxLocations=1`;
+              const res = await fetch(url);
+              const data = await res.json();
+              if (data.candidates && data.candidates.length > 0) {
+                const target = itineraries.value.find(i => i.id === item.id);
+                if (target) {
+                  target.lat = data.candidates[0].location.y;
+                  target.lng = data.candidates[0].location.x;
+                  updatedCount++;
+                }
+              }
+            } catch (e) { console.error('定位失敗:', item.title); }
+          }));
+
+          isSyncingMap.value = false;
+          alert(`📍 同步完成！成功定位 ${updatedCount} 個地點。`);
           drawPaths();
         };
 
         const drawPaths = () => {
           if (!mapInstance) return;
           polylineLayer.clearLayers(); markerLayer.clearLayers();
-          let allLatLngs = [];
+          const allLatLngs = [];
           const daysToDraw = selectedDay.value === 'all' ? Array.from({length: totalDays.value}, (_, i) => i + 1) : [selectedDay.value];
 
           daysToDraw.forEach(day => {
-            const coords = mockPathsData[day];
-            if (!coords) return;
+            const dayItems = itineraries.value.filter(i => i.day === day && i.lat && i.lng).sort((a,b) => a.time.localeCompare(b.time));
+            const coords = dayItems.map(i => [i.lat, i.lng]);
+            if (!coords.length) return;
+
             const color = dayColors[(day - 1) % dayColors.length];
-            L.polyline(coords, { color: color, weight: 5, opacity: 0.9 }).addTo(polylineLayer);
-            coords.forEach(coord => {
-              L.circleMarker(coord, { radius: 6, fillColor: '#fff', color: color, weight: 3, fillOpacity: 1 }).addTo(markerLayer);
+            // 繪製連線虛線
+            L.polyline(coords, { color, weight: 4, opacity: 0.8, dashArray: '5, 8' }).addTo(polylineLayer);
+            
+            // 繪製點位
+            dayItems.forEach((item, index) => {
+              const coord = [item.lat, item.lng];
+              const marker = L.circleMarker(coord, { radius: 6, fillColor: '#fff', color, weight: 3, fillOpacity: 1 }).addTo(markerLayer);
+              marker.bindPopup(`<strong style="color:${color};font-size:14px;">${item.time}</strong><br><b>${item.title}</b>`);
               allLatLngs.push(coord);
             });
           });
-          if (allLatLngs.length > 0) mapInstance.fitBounds(L.polyline(allLatLngs).getBounds(), { padding: [30, 30] });
+          // 根據標記點自動縮放視野
+          if (allLatLngs.length > 0) {
+            mapInstance.fitBounds(L.polyline(allLatLngs).getBounds(), { padding: [40, 40], maxZoom: 15 });
+          }
         };
-
-        watch(selectedDay, () => { if (currentTab.value === 'map') drawPaths(); cancelEditItin(); });
+        watch(selectedDay, () => { if (currentTab.value === 'map') nextTick(() => drawPaths()); cancelEditItin(); });
 
         // --- 3. 記帳功能 ---
-        const paymentMethods = ref(loadData('travel_paymentMethods', [{ id: 'cash1', name: '現金', type: 'cash', limit: 0, spent: 0 }]));
-        watch(paymentMethods, val => localStorage.setItem('travel_paymentMethods', JSON.stringify(val)), { deep: true });
+        const initExpenseForm = () => ({ day: '', amount: null, methodId: '', note: '' });
+        const initMethodForm = () => ({ name: '', type: 'cash', rewardRate: null, limit: null });
 
-        const expenses = ref(loadData('travel_expenses', []));
-        watch(expenses, val => localStorage.setItem('travel_expenses', JSON.stringify(val)), { deep: true });
-
-        const expenseForm = ref({ day: '', amount: null, methodId: '', note: '' });
+        const paymentMethods = useSyncedRef('travel_paymentMethods', [{ id: 'cash1', name: '現金', type: 'cash', limit: 0, spent: 0 }], true);
+        const expenses = useSyncedRef('travel_expenses', [], true);
+        
+        const expenseForm = ref(initExpenseForm());
         const isPaymentSettingsOpen = ref(false);
         const editingMethodId = ref(null);
-        const methodForm = ref({ name: '', type: 'cash', rewardRate: null, limit: null });
+        const methodForm = ref(initMethodForm());
 
-        const filteredExpenses = computed(() => {
-          let list = expenses.value;
-          if (selectedDay.value !== 'all') list = list.filter(e => e.day === selectedDay.value);
-          return list.slice().sort((a,b) => b.id - a.id);
-        });
-
-        const currentViewTotalSpent = computed(() => filteredExpenses.value.reduce((sum, exp) => sum + exp.amount, 0));
-        const currentViewTotalRewards = computed(() => filteredExpenses.value.reduce((total, exp) => {
-          const method = paymentMethods.value.find(m => m.id === exp.methodId);
-          if (method && method.type === 'card' && method.rewardRate) return total + Math.round(exp.amount * (method.rewardRate / 100));
-          return total;
+        const filteredExpenses = computed(() => (selectedDay.value === 'all' ? expenses.value : expenses.value.filter(e => e.day === selectedDay.value)).slice().sort((a,b) => b.id - a.id));
+        const currentViewTotalSpent = computed(() => filteredExpenses.value.reduce((s, e) => s + e.amount, 0));
+        const currentViewTotalRewards = computed(() => filteredExpenses.value.reduce((tot, e) => {
+          const m = paymentMethods.value.find(x => x.id === e.methodId);
+          return (m?.type === 'card' && m.rewardRate) ? tot + Math.round(e.amount * (m.rewardRate / 100)) : tot;
         }, 0));
 
         const selectedMethodInfo = computed(() => paymentMethods.value.find(m => m.id === expenseForm.value.methodId));
-        const calculatedReward = computed(() => {
-          if (!selectedMethodInfo.value || selectedMethodInfo.value.type !== 'card' || !expenseForm.value.amount) return 0;
-          return Math.round(expenseForm.value.amount * (selectedMethodInfo.value.rewardRate / 100));
-        });
+        const calculatedReward = computed(() => selectedMethodInfo.value?.type === 'card' && expenseForm.value.amount ? Math.round(expenseForm.value.amount * (selectedMethodInfo.value.rewardRate / 100)) : 0);
         const remainingLimit = computed(() => {
-          if (!selectedMethodInfo.value || selectedMethodInfo.value.type !== 'card') return 0;
-          const totalSpentForCard = expenses.value.filter(e => e.methodId === selectedMethodInfo.value.id).reduce((s, e) => s + e.amount, 0);
-          return selectedMethodInfo.value.limit - totalSpentForCard - (expenseForm.value.amount || 0);
+          if (selectedMethodInfo.value?.type !== 'card') return 0;
+          const spent = expenses.value.filter(e => e.methodId === selectedMethodInfo.value.id).reduce((s, e) => s + e.amount, 0);
+          return selectedMethodInfo.value.limit - spent - (expenseForm.value.amount || 0);
         });
 
         const addExpense = () => {
-          let targetDay = selectedDay.value === 'all' ? expenseForm.value.day : selectedDay.value;
-          if (selectedDay.value === 'all' && !targetDay) { alert('請選擇天數'); return; }
+          const targetDay = selectedDay.value === 'all' ? expenseForm.value.day : selectedDay.value;
+          if (selectedDay.value === 'all' && !targetDay) return alert('請選擇天數');
           if (!expenseForm.value.amount || !expenseForm.value.methodId || !expenseForm.value.note) return;
-          expenses.value.unshift({ id: Date.now(), day: targetDay, amount: expenseForm.value.amount, methodId: expenseForm.value.methodId, note: expenseForm.value.note });
-          expenseForm.value = { day: '', amount: null, methodId: '', note: '' };
+          expenses.value.unshift({ id: Date.now(), day: targetDay, ...expenseForm.value });
+          expenseForm.value = initExpenseForm();
         };
-
-        const deleteExpense = (id) => { if (confirm('確定刪除此筆記帳？')) expenses.value = expenses.value.filter(e => e.id !== id); };
+        const deleteExpense = (id) => confirmAction('確定刪除此筆記帳？', () => expenses.value = expenses.value.filter(e => e.id !== id));
 
         const saveMethod = () => {
           if (!methodForm.value.name) return;
           if (editingMethodId.value) {
-            const index = paymentMethods.value.findIndex(m => m.id === editingMethodId.value);
-            if (index !== -1) paymentMethods.value[index] = { ...methodForm.value, id: editingMethodId.value, spent: paymentMethods.value[index].spent };
+            const idx = paymentMethods.value.findIndex(m => m.id === editingMethodId.value);
+            if (idx > -1) paymentMethods.value[idx] = { ...methodForm.value, id: editingMethodId.value, spent: paymentMethods.value[idx].spent };
             editingMethodId.value = null;
           } else paymentMethods.value.push({ id: 'm_' + Date.now(), ...methodForm.value, spent: 0 });
-          methodForm.value = { name: '', type: 'cash', rewardRate: null, limit: null };
+          methodForm.value = initMethodForm();
         };
-        const editMethod = (method) => { editingMethodId.value = method.id; methodForm.value = { ...method }; };
-        const cancelEditMethod = () => { editingMethodId.value = null; methodForm.value = { name: '', type: 'cash', rewardRate: null, limit: null }; };
-        const deletePaymentMethod = (id) => { if(confirm('確定刪除此付款方式？')) paymentMethods.value = paymentMethods.value.filter(m => m.id !== id); };
-        const getMethodName = (id) => { const m = paymentMethods.value.find(m => m.id === id); return m ? m.name : '未知'; };
+        const editMethod = (m) => { editingMethodId.value = m.id; methodForm.value = { ...m }; };
+        const cancelEditMethod = () => { editingMethodId.value = null; methodForm.value = initMethodForm(); };
+        const deletePaymentMethod = (id) => confirmAction('確定刪除此付款方式？', () => paymentMethods.value = paymentMethods.value.filter(m => m.id !== id));
+        const getMethodName = (id) => paymentMethods.value.find(m => m.id === id)?.name || '未知';
 
-        // --- 4. 旅遊前檢查 ---
+        // --- 4. & 5. 旅遊前檢查 / 購物清單 ---
+        const checklist = useSyncedRef('travel_checklist', [{ id: 1, name: '護照與證件', done: false }], true);
+        const shoppingList = useSyncedRef('travel_shoppingList', [], true);
         const newChecklistItem = ref('');
-        const checklist = ref(loadData('travel_checklist', [{ id: 1, name: '護照與證件', done: false }]));
-        watch(checklist, val => localStorage.setItem('travel_checklist', JSON.stringify(val)), { deep: true });
-
-        const addChecklistItem = () => {
-          if (!newChecklistItem.value.trim()) return;
-          checklist.value.unshift({ id: Date.now(), name: newChecklistItem.value, done: false });
-          newChecklistItem.value = '';
-        };
-        const deleteChecklistItem = (id) => { if(confirm('確定要刪除這項準備事項嗎？')) checklist.value = checklist.value.filter(i => i.id !== id); };
-
-        // --- 5. 購物清單 ---
         const newShoppingItem = ref('');
-        const shoppingList = ref(loadData('travel_shoppingList', []));
-        watch(shoppingList, val => localStorage.setItem('travel_shoppingList', JSON.stringify(val)), { deep: true });
 
-        const addShoppingItem = () => {
-          if (!newShoppingItem.value.trim()) return;
-          shoppingList.value.unshift({ id: Date.now(), name: newShoppingItem.value, done: false });
-          newShoppingItem.value = '';
+        const addToList = (listRef, inputRef) => {
+          if (!inputRef.value.trim()) return;
+          listRef.value.unshift({ id: Date.now(), name: inputRef.value, done: false });
+          inputRef.value = '';
         };
-        const deleteShoppingItem = (id) => { if(confirm('確定要刪除這項待買物品嗎？')) shoppingList.value = shoppingList.value.filter(i => i.id !== id); };
+        const addChecklistItem = () => addToList(checklist, newChecklistItem);
+        const addShoppingItem = () => addToList(shoppingList, newShoppingItem);
+        const deleteChecklistItem = (id) => confirmAction('確定刪除？', () => checklist.value = checklist.value.filter(i => i.id !== id));
+        const deleteShoppingItem = (id) => confirmAction('確定刪除？', () => shoppingList.value = shoppingList.value.filter(i => i.id !== id));
 
         // --- 6. 歷史紀錄 & 匯出匯入功能 ---
-        const historyTrips = ref(loadData('travel_historyTrips', []));
-        watch(historyTrips, val => localStorage.setItem('travel_historyTrips', JSON.stringify(val)), { deep: true });
+        const historyTrips = useSyncedRef('travel_historyTrips', [], true);
 
         const saveToHistory = () => {
-          const newTrip = {
-            id: Date.now(),
-            tripName: tripName.value,
-            totalDays: totalDays.value,
-            itineraries: JSON.parse(JSON.stringify(itineraries.value)),
-            expenses: JSON.parse(JSON.stringify(expenses.value)),
-            checklist: JSON.parse(JSON.stringify(checklist.value)),
-            shoppingList: JSON.parse(JSON.stringify(shoppingList.value))
-          };
-          historyTrips.value.unshift(newTrip);
+          historyTrips.value.unshift({
+            id: Date.now(), tripName: tripName.value, totalDays: totalDays.value,
+            itineraries: clone(itineraries.value), expenses: clone(expenses.value),
+            checklist: clone(checklist.value), shoppingList: clone(shoppingList.value)
+          });
           alert('行程已成功儲存至歷史紀錄！');
         };
 
         const clearCurrentTrip = () => {
           const check = window.prompt('警告：此操作將清空目前所有的規劃與紀錄！\n請輸入「刪除」兩個字以確認執行：');
           if (check === '刪除') {
-            tripName.value = '我的新旅程';
-            totalDays.value = 1;
-            selectedDay.value = 'all';
-            itineraries.value = [];
-            expenses.value = [];
+            tripName.value = '我的新旅程'; totalDays.value = 1; selectedDay.value = 'all'; currentTab.value = 'itinerary';
+            itineraries.value = []; expenses.value = []; shoppingList.value = [];
             checklist.value = [{ id: 1, name: '護照與證件', done: false }];
-            shoppingList.value = [];
-            alert('已清除目前行程！您可以開始規劃新旅程了。');
-            currentTab.value = 'itinerary';
-          } else if (check !== null) {
-            alert('輸入錯誤，已取消操作。');
+            alert('已清除目前行程！');
           }
         };
 
@@ -690,91 +795,56 @@
           if (check === '刪除') {
             historyTrips.value = historyTrips.value.filter(t => t.id !== id);
             alert('已刪除該歷史行程！');
-          } else if (check !== null) {
-            alert('輸入錯誤，已取消操作。');
           }
         };
 
         const loadHistoryTrip = (trip) => {
-          if (confirm('確定要載入此行程嗎？\n(注意：這將會覆蓋您「目前正在規劃」的畫面，建議先將目前行程儲存)')) {
-            tripName.value = trip.tripName;
-            totalDays.value = trip.totalDays;
-            itineraries.value = JSON.parse(JSON.stringify(trip.itineraries));
-            expenses.value = JSON.parse(JSON.stringify(trip.expenses));
-            checklist.value = JSON.parse(JSON.stringify(trip.checklist));
-            shoppingList.value = JSON.parse(JSON.stringify(trip.shoppingList));
-            selectedDay.value = 'all';
-            currentTab.value = 'itinerary';
-          }
+          confirmAction('確定要載入此行程嗎？\n(注意：這將會覆蓋目前正在規劃的畫面)', () => {
+            tripName.value = trip.tripName; totalDays.value = trip.totalDays; selectedDay.value = 'all'; currentTab.value = 'itinerary';
+            itineraries.value = clone(trip.itineraries); expenses.value = clone(trip.expenses);
+            checklist.value = clone(trip.checklist); shoppingList.value = clone(trip.shoppingList);
+          });
         };
 
-        // --- 備份功能 (匯出 JSON) ---
         const exportData = () => {
-          const data = {
-            totalDays: totalDays.value,
-            tripName: tripName.value,
-            itineraries: itineraries.value,
-            paymentMethods: paymentMethods.value,
-            expenses: expenses.value,
-            checklist: checklist.value,
-            shoppingList: shoppingList.value,
-            historyTrips: historyTrips.value
-          };
-          const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+          const blob = new Blob([JSON.stringify({
+            totalDays: totalDays.value, tripName: tripName.value, itineraries: itineraries.value,
+            paymentMethods: paymentMethods.value, expenses: expenses.value, checklist: checklist.value,
+            shoppingList: shoppingList.value, historyTrips: historyTrips.value
+          })], { type: "application/json" });
           const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `travel_backup_${new Date().toISOString().slice(0,10)}.json`;
-          a.click();
-          URL.revokeObjectURL(url);
+          const a = document.createElement('a'); a.href = url; a.download = `travel_backup_${new Date().toISOString().slice(0,10)}.json`;
+          a.click(); URL.revokeObjectURL(url);
         };
 
-        // --- 還原功能 (匯入 JSON) ---
         const importData = (event) => {
-          const file = event.target.files[0];
-          if (!file) return;
+          const file = event.target.files[0]; if (!file) return;
           const reader = new FileReader();
           reader.onload = (e) => {
             try {
-              const data = JSON.parse(e.target.result);
-              totalDays.value = data.totalDays || 1;
-              tripName.value = data.tripName || '我的新旅程';
-              itineraries.value = data.itineraries || [];
-              paymentMethods.value = data.paymentMethods || [{ id: 'cash1', name: '現金', type: 'cash', limit: 0, spent: 0 }];
-              expenses.value = data.expenses || [];
-              checklist.value = data.checklist || [{ id: 1, name: '護照與證件', done: false }];
-              shoppingList.value = data.shoppingList || [];
-              historyTrips.value = data.historyTrips || [];
-              alert('備份資料匯入成功！');
-              // 清空 input，讓同一檔案可以重複選取
-              event.target.value = '';
-            } catch (err) {
-              alert('檔案格式錯誤，匯入失敗。請確保上傳的是正確的備份檔 (.json)。');
-            }
+              const d = JSON.parse(e.target.result);
+              totalDays.value = d.totalDays || 1; tripName.value = d.tripName || '我的新旅程';
+              itineraries.value = d.itineraries || []; paymentMethods.value = d.paymentMethods || [{ id: 'cash1', name: '現金', type: 'cash', limit: 0, spent: 0 }];
+              expenses.value = d.expenses || []; checklist.value = d.checklist || [{ id: 1, name: '護照與證件', done: false }];
+              shoppingList.value = d.shoppingList || []; historyTrips.value = d.historyTrips || [];
+              alert('備份資料匯入成功！'); event.target.value = '';
+            } catch (err) { alert('檔案格式錯誤，匯入失敗。'); }
           };
           reader.readAsText(file);
         };
 
-        const switchTab = (tab) => {
-          currentTab.value = tab;
-          if (tab === 'map') nextTick(() => initMap());
-        };
-
-        onMounted(() => {
-          if (currentTab.value === 'map') nextTick(() => initMap());
-        });
+        const switchTab = (tab) => { currentTab.value = tab; if (tab === 'map') nextTick(() => initMap()); };
+        onMounted(() => { if (currentTab.value === 'map') nextTick(() => initMap()); });
 
         return {
           currentTab, switchTab, totalDays, selectedDay, addDay, deleteDay, tripName, editingTripName,
           itineraries, filteredItineraries, itinForm, editingItinId, saveItinerary, editItin, cancelEditItin, deleteItin,
-          hasPathForSelectedDay,
+          calculateTimeGap, hasPathForSelectedDay, isSyncingMap, syncItineraryLocations, 
           paymentMethods, expenses, expenseForm, filteredExpenses, currentViewTotalSpent, currentViewTotalRewards,
           selectedMethodInfo, calculatedReward, remainingLimit, addExpense, deleteExpense, getMethodName,
           isPaymentSettingsOpen, methodForm, editingMethodId, saveMethod, editMethod, cancelEditMethod, deletePaymentMethod,
-          newChecklistItem, checklist, addChecklistItem, deleteChecklistItem,
-          newShoppingItem, shoppingList, addShoppingItem, deleteShoppingItem,
-          historyTrips, saveToHistory, clearCurrentTrip, deleteHistoryTrip, loadHistoryTrip,
-          exportData, importData
+          newChecklistItem, checklist, addChecklistItem, deleteChecklistItem, newShoppingItem, shoppingList, addShoppingItem, deleteShoppingItem,
+          historyTrips, saveToHistory, clearCurrentTrip, deleteHistoryTrip, loadHistoryTrip, exportData, importData
         };
       }
     }).mount('#app');
