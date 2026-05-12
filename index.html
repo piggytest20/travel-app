@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>我的旅遊計畫 App</title>
   
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
@@ -18,7 +20,7 @@
           colors: {
             primary: '#eff6ff',   // 淺藍背景
             secondary: '#60a5fa', // 次要輔助色
-            accent: '#2563eb'     // 主要強調色 (藍色)
+            accent: '#0288D1'     // 主要強調色 (藍色)
           },
           animation: {
             'fade-in': 'fadeIn 0.3s ease-out forwards',
@@ -88,140 +90,98 @@
 </div>
     </header>
 
-    <main class="flex-1 overflow-y-auto no-scrollbar p-4 pb-24 relative z-10">
+<main class="flex-1 overflow-y-auto no-scrollbar p-4 pb-[calc(6rem+env(safe-area-inset-bottom))] relative z-10">
       
       <div v-show="currentTab === 'itinerary'" class="space-y-4">
-        <div class="glass-panel p-4 rounded-2xl shadow-sm flex flex-col gap-3">
-          <div class="flex justify-between items-center border-b border-gray-100 pb-2">
-            <span class="font-bold text-gray-700">{{ editingItinId ? '編輯行程' : '新增行程' }}</span>
-            <button v-if="editingItinId" @click="cancelEditItin" class="text-xs text-gray-400 hover:text-gray-600 bg-gray-100 px-2 py-1 rounded">取消編輯</button>
+<div class="glass-panel p-4 rounded-2xl shadow-sm flex flex-col gap-3">
+<!-- 標題列：加上點擊事件與箭頭動畫 -->
+          <div class="flex justify-between items-center border-b border-gray-100 pb-2 cursor-pointer" @click="isItinFormOpen = !isItinFormOpen">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-gray-700">{{ editingItinId ? '編輯行程' : '新增行程' }}</span>
+              <i class="fa-solid fa-chevron-down text-gray-400 transition-transform duration-300" :class="{'rotate-180': isItinFormOpen}"></i>
+            </div>
+            
+            <!-- 右側區塊：品牌 Logo 與 取消按鈕 -->
+            <div class="flex items-center gap-3">
+              <!-- 加上 pointer-events-none 確保點擊圖片時會穿透，不影響區塊收合功能 -->
+              <img 
+                src="https://blogger.googleusercontent.com/img/a/AVvXsEgAWpXOPORmm00STvGZwCs7bQ-80V_S4OP7TB4Q1idvOP1_jbulmr4gWOnU0qKp4gMMMWi8X2sSxu5RABC109yfXOuw9TGPOYfmhG-cb888brGdcOTYJOlGOB1KbbOUiBgMRjiLmMqRLqyZ10cYbp0gh0OQeSUVtTuUhYVx3xL5w13BYJrAAPy7beQigiuT=s1600" 
+                alt="品牌Logo" 
+                class="h-6 w-auto object-contain pointer-events-none drop-shadow-sm"
+              >
+              
+              <!-- 加入 @click.stop 防止點擊取消時觸發外層的收合功能 -->
+              <button v-if="editingItinId" @click.stop="cancelEditItin" class="text-xs text-gray-400 hover:text-gray-600 bg-gray-100 px-2 py-1 rounded">取消編輯</button>
+            </div>
           </div>
           
-       <div class="flex flex-col gap-2">
-
-  <!-- 第一列 -->
-  <div class="flex gap-2">
-
-    <select 
-      v-if="selectedDay === 'all' && !editingItinId"
-      v-model="itinForm.day"
-      class="p-2 border border-blue-100 rounded-xl text-gray-700 bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary text-sm w-1/3"
-    >
-      <option value="">選擇天數</option>
-      <option v-for="d in totalDays" :key="d" :value="d">
-        Day {{ d }}
-      </option>
-    </select>
-
-    <input 
-      v-model="itinForm.time"
-      type="time"
-      class="p-2 border border-blue-100 rounded-xl text-gray-700 bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary text-sm flex-1"
-    >
-
-    <input 
-      v-model="itinForm.title"
-      type="text"
-      placeholder="行程名稱"
-      class="p-2 border border-blue-100 rounded-xl text-gray-700 bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary flex-[2]"
-    >
-
-  </div>
-
-  <!-- 第二列 -->
-  <input 
-    v-model="itinForm.mapKeyword"
-    type="text"
-    placeholder="地圖定位名稱（選填）例如：東京鐵塔、澀谷109"
-    class="w-full p-2 border border-blue-100 rounded-xl text-sm text-gray-700 bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary"
-  >
-
-</div>
-          
-          <select v-model="itinForm.transport" class="p-2 border border-blue-100 rounded-xl text-gray-700 bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary w-full">
-            <option value="">選擇交通方式 (選填)</option>
-            <option value="飛機">✈️ 飛機</option>
-            <option value="地鐵">🚇 地鐵</option>
-            <option value="客運">🚌 客運</option>
-            <option value="計程車">🚕 計程車</option>
-            <option value="步行">🚶 步行</option>
-          </select>
-
-          <div v-if="itinForm.transport === '飛機'" class="flex flex-col gap-2 animate-fade-in bg-white/70 p-3 rounded-xl border border-blue-100">
-            <div class="flex gap-2 items-center">
-              <input v-model="itinForm.flightDepartureAirport" type="text" placeholder="起飛機場" class="w-1/2 p-2 border border-blue-100 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-secondary">
-              <i class="fa-solid fa-plane text-accent opacity-50"></i>
-              <input v-model="itinForm.flightArrivalAirport" type="text" placeholder="抵達機場" class="w-1/2 p-2 border border-blue-100 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-secondary">
+          <!-- 表單內容區塊：用 v-show 控制顯示/隱藏 -->
+          <div v-show="isItinFormOpen" class="flex flex-col gap-3 animate-fade-in">
+            <div class="flex flex-col gap-2">
+              <!-- 第一列 -->
+              <div class="flex gap-2">
+                <select v-if="selectedDay === 'all' && !editingItinId" v-model="itinForm.day" class="p-2 border border-blue-100 rounded-xl text-gray-700 bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary text-sm w-1/3">
+                  <option value="">選擇天數</option>
+                  <option v-for="d in totalDays" :key="d" :value="d">Day {{ d }}</option>
+                </select>
+                <input v-model="itinForm.time" type="time" class="p-2 border border-blue-100 rounded-xl text-gray-700 bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary text-sm flex-1">
+                <input v-model="itinForm.title" type="text" placeholder="行程名稱" class="p-2 border border-blue-100 rounded-xl text-gray-700 bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary flex-[2]">
+              </div>
+              <!-- 第二列 -->
+              <input v-model="itinForm.mapKeyword" type="text" placeholder="地圖定位名稱（選填）例如：東京鐵塔、澀谷109" class="w-full p-2 border border-blue-100 rounded-xl text-sm text-gray-700 bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary">
             </div>
-            <div class="flex gap-2 items-center">
-              <input v-model="itinForm.flightDepartureTime" type="time" class="w-1/2 p-2 border border-blue-100 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-secondary">
-              <span class="text-xs text-gray-400 font-bold whitespace-nowrap">至</span>
-              <input v-model="itinForm.flightArrivalTime" type="time" class="w-1/2 p-2 border border-blue-100 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-secondary">
+            
+            <select v-model="itinForm.transport" class="p-2 border border-blue-100 rounded-xl text-gray-700 bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary w-full">
+              <option value="">選擇交通方式 (選填)</option>
+              <option value="飛機">✈️ 飛機</option>
+              <option value="地鐵">🚇 地鐵</option>
+              <option value="客運">🚌 客運</option>
+              <option value="計程車">🚕 計程車</option>
+              <option value="步行">🚶 步行</option>
+            </select>
+
+            <div v-if="itinForm.transport === '飛機'" class="flex flex-col gap-2 animate-fade-in bg-white/70 p-3 rounded-xl border border-blue-100">
+              <div class="flex gap-2 items-center">
+                <input v-model="itinForm.flightDepartureAirport" type="text" placeholder="起飛機場" class="w-1/2 p-2 border border-blue-100 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-secondary">
+                <i class="fa-solid fa-plane text-accent opacity-50"></i>
+                <input v-model="itinForm.flightArrivalAirport" type="text" placeholder="抵達機場" class="w-1/2 p-2 border border-blue-100 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-secondary">
+              </div>
+              <div class="flex gap-2 items-center">
+                <input v-model="itinForm.flightDepartureTime" type="time" class="w-1/2 p-2 border border-blue-100 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-secondary">
+                <span class="text-xs text-gray-400 font-bold whitespace-nowrap">至</span>
+                <input v-model="itinForm.flightArrivalTime" type="time" class="w-1/2 p-2 border border-blue-100 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-secondary">
+              </div>
+              <input v-model="itinForm.flightMemo" type="text" placeholder="航班號碼/航廈/備註" class="w-full p-2 border border-blue-100 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-secondary">
             </div>
-            <input v-model="itinForm.flightMemo" type="text" placeholder="航班號碼/航廈/備註" class="w-full p-2 border border-blue-100 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-secondary">
+
+            <div v-if="itinForm.transport === '地鐵'" class="flex gap-2 animate-fade-in">
+              <input v-model="itinForm.startStation" type="text" placeholder="起點站" class="w-1/2 p-2 border border-blue-100 rounded-xl text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary">
+              <div class="flex items-center text-gray-400"><i class="fa-solid fa-arrow-right"></i></div>
+              <input v-model="itinForm.endStation" type="text" placeholder="終點站" class="w-1/2 p-2 border border-blue-100 rounded-xl text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary">
+            </div>
+
+            <div v-if="itinForm.transport === '客運'" class="flex flex-col gap-3 animate-fade-in bg-white/70 p-3 rounded-xl border border-blue-100">
+              <div class="flex gap-2">
+                <input v-model="itinForm.startStation" type="text" placeholder="起點站" class="w-1/2 p-2 border border-blue-100 rounded-xl text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary">
+                <div class="flex items-center text-gray-400"><i class="fa-solid fa-arrow-right"></i></div>
+                <input v-model="itinForm.endStation" type="text" placeholder="終點站" class="w-1/2 p-2 border border-blue-100 rounded-xl text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary">
+              </div>
+              <div class="flex gap-2">
+                <div class="flex flex-col w-1/2">
+                  <label class="text-[10px] text-gray-500 mb-1 ml-1">出發時間</label>
+                  <input v-model="itinForm.busDepartureTime" type="time" class="p-2 border border-blue-100 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-secondary">
+                </div>
+                <div class="flex flex-col w-1/2">
+                  <label class="text-[10px] text-gray-500 mb-1 ml-1">抵達時間</label>
+                  <input v-model="itinForm.busArrivalTime" type="time" class="p-2 border border-blue-100 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-secondary">
+                </div>
+              </div>
+            </div>
+
+            <button @click="saveItinerary" class="bg-accent text-white py-2 rounded-xl font-bold shadow-md hover:bg-blue-700 transition-colors">
+              {{ editingItinId ? '儲存修改' : '加入行程' }}
+            </button>
           </div>
-
-          <div v-if="itinForm.transport === '地鐵'" class="flex gap-2 animate-fade-in">
-            <input v-model="itinForm.startStation" type="text" placeholder="起點站" class="w-1/2 p-2 border border-blue-100 rounded-xl text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary">
-            <div class="flex items-center text-gray-400"><i class="fa-solid fa-arrow-right"></i></div>
-            <input v-model="itinForm.endStation" type="text" placeholder="終點站" class="w-1/2 p-2 border border-blue-100 rounded-xl text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary">
-          </div>
-
-<div v-if="itinForm.transport === '客運'" class="flex flex-col gap-3 animate-fade-in bg-white/70 p-3 rounded-xl border border-blue-100">
-
-  <!-- 起點站 / 終點站 -->
-  <div class="flex gap-2">
-
-    <input
-      v-model="itinForm.startStation"
-      type="text"
-      placeholder="起點站"
-      class="w-1/2 p-2 border border-blue-100 rounded-xl text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary"
-    >
-
-    <div class="flex items-center text-gray-400">
-      <i class="fa-solid fa-arrow-right"></i>
-    </div>
-
-    <input
-      v-model="itinForm.endStation"
-      type="text"
-      placeholder="終點站"
-      class="w-1/2 p-2 border border-blue-100 rounded-xl text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-secondary"
-    >
-
-  </div>
-
-  <!-- 出發 / 抵達時間 -->
-  <div class="flex gap-2">
-
-    <div class="flex flex-col w-1/2">
-      <label class="text-[10px] text-gray-500 mb-1 ml-1">出發時間</label>
-
-      <input
-        v-model="itinForm.busDepartureTime"
-        type="time"
-        class="p-2 border border-blue-100 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-secondary"
-      >
-    </div>
-
-    <div class="flex flex-col w-1/2">
-      <label class="text-[10px] text-gray-500 mb-1 ml-1">抵達時間</label>
-
-      <input
-        v-model="itinForm.busArrivalTime"
-        type="time"
-        class="p-2 border border-blue-100 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-secondary"
-      >
-    </div>
-
-  </div>
-
-</div>
-
-          <button @click="saveItinerary" class="bg-accent text-white py-2 rounded-xl font-bold shadow-md hover:bg-blue-700 transition-colors">
-            {{ editingItinId ? '儲存修改' : '加入行程' }}
-          </button>
         </div>
 
         <div v-if="filteredItineraries.length === 0" class="text-center text-gray-400 py-8 text-sm glass-panel rounded-xl border border-dashed border-gray-200">
@@ -511,7 +471,7 @@
 
     </main>
 
-    <nav class="absolute bottom-0 w-full glass-panel border-t border-white/50 pb-5 pt-2 px-1 flex justify-between text-gray-400 rounded-t-3xl shadow-[0_-10px_30px_rgba(2,132,199,0.05)] z-20">
+<nav class="absolute bottom-0 w-full glass-panel border-t border-white/50 pt-2 px-1 pb-[calc(1.25rem+env(safe-area-inset-bottom))] flex justify-between text-gray-400 rounded-t-3xl shadow-[0_-10px_30px_rgba(2,132,199,0.05)] z-20">
       <button v-for="tab in [{id:'itinerary', icon:'calendar-day', name:'行程'}, {id:'map', icon:'map-location-dot', name:'地圖'}, {id:'expense', icon:'wallet', name:'記帳'}, {id:'shopping', icon:'cart-shopping', name:'購物'}, {id:'checklist', icon:'clipboard-list', name:'準備'}, {id:'history', icon:'clock-rotate-left', name:'歷史'}]" :key="tab.id" @click="switchTab(tab.id)" :class="{'text-accent scale-110': currentTab === tab.id}" class="flex flex-col items-center gap-1 transition-all duration-300 flex-1">
         <i :class="`fa-solid fa-${tab.icon} text-[18px]`"></i>
         <span class="text-[10px] font-bold">{{ tab.name }}</span>
@@ -567,6 +527,7 @@ const initItinForm = () => ({
         const itineraries = useSyncedRef('travel_itineraries', [], true);
         const itinForm = ref(initItinForm());
         const editingItinId = ref(null);
+        const isItinFormOpen = ref(false);
 
         const filteredItineraries = computed(() => {
           const list = selectedDay.value === 'all' ? itineraries.value : itineraries.value.filter(i => i.day === selectedDay.value);
@@ -596,7 +557,12 @@ const initItinForm = () => ({
           itinForm.value = initItinForm();
         };
 
-        const editItin = (item) => { editingItinId.value = item.id; itinForm.value = { ...item }; window.scrollTo({ top: 0, behavior: 'smooth' }); };
+ const editItin = (item) => { 
+  editingItinId.value = item.id; 
+  itinForm.value = { ...item }; 
+  isItinFormOpen.value = true; 
+  window.scrollTo({ top: 0, behavior: 'smooth' }); 
+};
         const cancelEditItin = () => { editingItinId.value = null; itinForm.value = initItinForm(); };
         const deleteItin = (id) => { confirmAction('確定刪除此行程？', () => itineraries.value = itineraries.value.filter(i => i.id !== id)); };
 
@@ -840,7 +806,7 @@ const url = `https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer
 
         return {
           currentTab, switchTab, totalDays, selectedDay, addDay, deleteDay, tripName, editingTripName,
-          itineraries, filteredItineraries, itinForm, editingItinId, saveItinerary, editItin, cancelEditItin, deleteItin,
+          itineraries, filteredItineraries, itinForm, editingItinId, isItinFormOpen, saveItinerary, editItin, cancelEditItin, deleteItin,
           calculateTimeGap, hasPathForSelectedDay, isSyncingMap, syncItineraryLocations, 
           paymentMethods, expenses, expenseForm, filteredExpenses, currentViewTotalSpent, currentViewTotalRewards,
           selectedMethodInfo, calculatedReward, remainingLimit, addExpense, deleteExpense, getMethodName,
